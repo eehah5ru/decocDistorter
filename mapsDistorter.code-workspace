@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "${workspaceRoot}/../../../../libs/openFrameworks"
+		},
+		{
+			"path": "${workspaceRoot}/../../../../addons/ofxNetwork"
+		},
+		{
+			"path": "${workspaceRoot}/../../../../addons/ofxOpenCv"
+		},
+		{
+			"path": "${workspaceRoot}/../../../../addons/ofxOsc"
+		},
+		{
+			"path": "${workspaceRoot}/../../../../addons/ofxThreadedImageLoader"
+		}
+	],
+	"openFrameworksProjectGeneratorVersion": "35",
+	"settings": {}
+}
