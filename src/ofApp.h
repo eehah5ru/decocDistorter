@@ -1,15 +1,27 @@
 #pragma once
 
 #include "ofMain.h"
+#include "Video.h"
+#include "Diagram.h"
+#include "Communicator.h"
+
+using namespace comm;
 
 class ofApp : public ofBaseApp{
+  
+  Video _video;
+  Diagram _diagram;
 
+  Communicator _communicator;
+  
+  
 	public:
 		void setup() override;
 		void update() override;
 		void draw() override;
-		void exit() override;
+  void exit() override;
 
+  
 		void keyPressed(int key) override;
 		void keyReleased(int key) override;
 		void mouseMoved(int x, int y ) override;

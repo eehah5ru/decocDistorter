@@ -2,22 +2,31 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+  ofSetLogLevel(OF_LOG_VERBOSE);
 
+  _video.setup();
+  _diagram.setup();
+
+  _communicator.setup();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+  _video.update();
+  _diagram.update();
 
+  _communicator.send(_video.contours());
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-
+  //  _video.draw();
+  _diagram.draw();
 }
 
 //--------------------------------------------------------------
 void ofApp::exit(){
-
+  _communicator.exit();
 }
 
 //--------------------------------------------------------------
@@ -32,7 +41,7 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-
+  _communicator.send(x, y);
 }
 
 //--------------------------------------------------------------

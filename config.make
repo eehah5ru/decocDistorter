@@ -77,7 +77,7 @@ OF_ROOT = ../../..
 # add a runtime path to search for those shared libraries, since they aren't 
 # incorporated directly into the final executable application binary.
 # TODO: should this be a default setting?
-# PROJECT_LDFLAGS=-Wl,-rpath=./libs
+PROJECT_LDFLAGS=-Wl,-rpath=./libs $(shell Magick++-config --ldflags --libs)
 
 ################################################################################
 # PROJECT DEFINES
@@ -105,7 +105,7 @@ OF_ROOT = ../../..
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-# PROJECT_CFLAGS = 
+PROJECT_CFLAGS = $(shell Magick++-config --cxxflags --cppflags)
 
 ################################################################################
 # PROJECT OPTIMIZATION CFLAGS
@@ -138,5 +138,5 @@ OF_ROOT = ../../..
 #		(default) PROJECT_CC = (blank)
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-# PROJECT_CXX = 
-# PROJECT_CC = 
+PROJECT_CXX = g++
+PROJECT_CC = gcc

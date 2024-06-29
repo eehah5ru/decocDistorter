@@ -3,6 +3,7 @@
 
 //========================================================================
 int main( ){
+  Magick::InitializeMagick(nullptr);
 
 	//Use ofGLFWWindowSettings for more options like multi-monitor fullscreen
 	ofGLWindowSettings settings;
