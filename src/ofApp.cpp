@@ -1,4 +1,6 @@
 #include "ofApp.h"
+#include "ofColor.h"
+#include "ofGraphics.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -20,6 +22,7 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+  ofBackground(ofColor::hotPink);
    _video.draw();
   _diagram.draw();
 }
