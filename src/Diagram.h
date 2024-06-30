@@ -7,6 +7,8 @@
 using namespace std;
 
 class Diagram {
+  const string DIAGRAM_FILE = "diagrams/map_patched.svg";
+
   ofFloatPixels _diagramPix;
   ofFloatImage _diagramImage;
 

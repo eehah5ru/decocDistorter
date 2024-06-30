@@ -58,6 +58,7 @@ void Video::update() {
 }
 
 void Video::draw() {
+  ofPushStyle();
   ofSetColor(ofColor::wheat);
   _grabber.draw(20, 20);
 
@@ -65,6 +66,7 @@ void Video::draw() {
   ofSetColor(ofColor::deepPink);
 
   _contourFinder.draw(20, 20);
+  ofPopStyle();
 }
 
 void Video::keyPressed(ofKeyEventArgs &key) {

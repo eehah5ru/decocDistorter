@@ -7,26 +7,43 @@
 #include "ofxOsc.h"
 #include "ofxOscSender.h"
 #include <memory>
+#include "myThreadChannel.hpp"
 
 namespace comm {
   // using SenderInData = vector<ofxCvBlob>;
 
+
+  // class SenderInCmd {
+  //   vector<ofxCvBlob> _contours;
+
+  // };
 
   //
   // Sender Cmd interface
   //
   class SenderInData {
   public:
-    SenderInData();
+    virtual ~SenderInData() = default;
+    SenderInData(const SenderInData&) = default;
+    SenderInData& operator=(const SenderInData&) = default;
+    SenderInData(SenderInData&&) = default;
+    SenderInData& operator=(SenderInData&&) = default;
 
-    SenderInData(const SenderInData&) = delete;
-    SenderInData& operator=(const SenderInData&) = delete;
+    SenderInData() = default;
+
+    // SenderInData(const SenderInData&) = delete;
+    // SenderInData& operator=(const SenderInData&) = delete;
+
+    friend void swap(SenderInData& a, SenderInData& b) noexcept {
+        using std::swap;
+    }
 
     void virtual send(ofxOscSender &oscSender);
   };
 
-  using ChannelData = std::unique_ptr<SenderInData>;
-  using SenderInChannel = ofThreadChannel<ChannelData>;
+  // using ChannelData = std::unique_ptr<SenderInData>;
+  using ChannelData = SenderInData;
+  using SenderInChannel = myThreadChannel<SenderInData>;
 
 
 
@@ -42,7 +59,14 @@ namespace comm {
 
   public:
     SenderCountoursCmd(vector<ofxCvBlob> contours);
-    ~SenderCountoursCmd();
+    // ~SenderCountoursCmd();
+
+    friend void swap(SenderCountoursCmd& a, SenderCountoursCmd& b) noexcept
+    {
+        using std::swap;
+        swap(static_cast<SenderInData&>(a), static_cast<SenderInData&>(b));
+        swap(a._contours, b._contours);
+    }
 
     void virtual send(ofxOscSender &oscSender) override;
   };
@@ -55,10 +79,18 @@ namespace comm {
     float _y;
   public:
     SenderMouseCmd(float x, float y);
-    ~SenderMouseCmd();
+    // ~SenderMouseCmd();
 
     void virtual send(ofxOscSender &oscSender) override;
 
+  };
+
+  //
+  // Shake positions CMD
+  //
+  class SenderShakePositionsCmd : public SenderInData {
+  public:
+    void virtual send(ofxOscSender &oscSender) override;
   };
 
 
@@ -95,7 +127,7 @@ namespace comm {
   // comm class
   //
   class Communicator {
-    SenderInChannel _senderOut;
+    myThreadChannel<SenderInData> _senderOut;
     // ofThreadChannel<>
 
     Sender _sender;
@@ -108,8 +140,10 @@ namespace comm {
 
     void exit();
 
-    void send(vector<ofxCvBlob> &contours);
+    void sendContours(vector<ofxCvBlob> contours);
 
-    void send(int x, int y);
+    void sendMouse(int x, int y);
+
+    void sendShakePositions();
   };
 }

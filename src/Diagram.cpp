@@ -14,10 +14,11 @@ Diagram::~Diagram() {
 
 void Diagram::setup() {
   ofAddListener(ofEvents().windowResized, this, &Diagram::onWindowResize);
-  loadDiagram("diagrams/map_patched.svg");
+  loadDiagram(DIAGRAM_FILE);
 }
 
 void Diagram::update() {
+  loadDiagram(DIAGRAM_FILE);
 }
 
 // FIXME: pass x y as args instead defaulting them to 0

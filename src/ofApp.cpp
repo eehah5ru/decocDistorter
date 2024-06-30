@@ -15,12 +15,12 @@ void ofApp::update(){
   _video.update();
   _diagram.update();
 
-  _communicator.send(_video.contours());
+  _communicator.sendContours(_video.contours());
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-  //  _video.draw();
+   _video.draw();
   _diagram.draw();
 }
 
@@ -41,7 +41,7 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-  _communicator.send(x, y);
+  _communicator.sendMouse(x, y);
 }
 
 //--------------------------------------------------------------
@@ -56,7 +56,7 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-
+  _communicator.sendShakePositions();
 }
 
 //--------------------------------------------------------------

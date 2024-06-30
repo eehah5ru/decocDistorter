@@ -45,20 +45,34 @@ namespace comm {
   //
   // send contours
   //
-  void Communicator::send(vector<ofxCvBlob> &contours) {
-    auto cmd = std::make_unique<SenderCountoursCmd>(contours);
-    _senderOut.send(cmd.get());
+  void Communicator::sendContours(vector<ofxCvBlob> contours) {
+    std::shared_ptr<SenderInData> cmd = std::make_shared<SenderCountoursCmd>(contours);
+
+
+    // _senderOut.send(cmd);
+
   }
 
   //
   // send mouse position
   //
-  void Communicator::send(int x, int y) {
+  void Communicator::sendMouse(int x, int y) {
     // normalized to window size
     float f_x = ofMap(x, 0, ofGetWidth(), 0.f, 1.f, true);
     float f_y = ofMap(y, 0, ofGetHeight(), 0.f, 1.f, true);
 
-    SenderMouseCmd cmd{f_x, f_y};
+    std::shared_ptr<SenderInData> cmd = std::make_shared<SenderMouseCmd>(f_x, f_y);
+
+    // SenderMouseCmd cmd{f_x, f_y};
+    _senderOut.send(cmd);
+  }
+
+  //
+  // send shake poositions
+  //
+  void Communicator::sendShakePositions() {
+    auto cmd = std::make_shared<SenderShakePositionsCmd>();
+
     _senderOut.send(cmd);
   }
 
@@ -82,10 +96,14 @@ namespace comm {
 
   void Sender::threadedFunction() {
     while (isThreadRunning()) {
-      SenderInData cmd;
-      _inChannel.receive(cmd);
+      // auto cmd = make_shared<SenderInData>();
+      auto cmd = _inChannel.receive();
 
-      cmd.send(_oscSender);
+      // _inChannel.receive(cmd);
+
+      if (cmd.has_value()) {
+        cmd.value()->send(_oscSender);
+      }
     }
   }
 
@@ -95,10 +113,10 @@ namespace comm {
   //
   //
 
-  SenderInData::SenderInData() {}
+  // SenderInData::SenderInData() {}
 
   void SenderInData::send(ofxOscSender &oscSender) {
-    std::cerr << "SenderInData.send" << endl;
+    throw std::logic_error("SenderInData.send must be overriden");
   }
 
   //
@@ -110,7 +128,7 @@ namespace comm {
     : _contours{contours} {
   }
 
-  SenderCountoursCmd::~SenderCountoursCmd() {}
+  // SenderCountoursCmd::~SenderCountoursCmd() {}
 
   void SenderCountoursCmd::send(ofxOscSender &oscSender) {
     send_sendingContours(oscSender, _contours.size());
@@ -155,13 +173,27 @@ namespace comm {
     : _x{x}
     , _y{y} {}
 
-  SenderMouseCmd::~SenderMouseCmd() {}
+  // SenderMouseCmd::~SenderMouseCmd() {}
 
   void SenderMouseCmd::send(ofxOscSender &oscSender) {
+    // std::cerr << "SenderMouseCmd.send" << endl;
+
     ofxOscMessage m;
     m.setAddress("/mouse/position");
     m.addFloatArg(_x);
     m.addFloatArg(_y);
+    oscSender.sendMessage(m, false);
+  }
+
+
+  //
+  //
+  // SENDER CMD / SHAKE POSITIONS
+  //
+  //
+  void SenderShakePositionsCmd::send(ofxOscSender &oscSender) {
+    ofxOscMessage m;
+    m.setAddress("/shake/positions");
     oscSender.sendMessage(m, false);
   }
 
