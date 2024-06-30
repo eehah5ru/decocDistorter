@@ -1,7 +1,9 @@
 #include "Diagram.h"
 #include "Magick++/Color.h"
+#include "MagickCore/image.h"
 #include "ofEventUtils.h"
 #include "ofGraphics.h"
+#include "ofGraphicsConstants.h"
 #include "ofMain.h"
 #include "ofShader.h"
 
@@ -47,14 +49,16 @@ void Diagram::draw () {
 void Diagram::loadDiagram(string path) {
   Magick::Image my_image{};
 
-  Magick::Color c{0x00, 0x00, 0x00, 0xFFFF};
-  my_image.backgroundColor(c);
+  // Magick::Color c{0x00, 0x00, 0x00, 0xFFFF};
+  my_image.backgroundColor("None");
   // my_image.debug();
   // my_image.depth(16);
   // stringstream p;
   // p << "svgz:" << ofToDataPath(path);
 
   my_image.read(ofToDataPath(path));
+  my_image.type(MagickCore::ImageType::TrueColorAlphaType);
+
   // my_image.verbose();
   // my_image.depth(16);
   // my_image.write(ofToDataPath("diagrams/test_out.png"));
@@ -64,14 +68,15 @@ void Diagram::loadDiagram(string path) {
   // ofLog(OF_LOG_NOTICE) << "svg width: " << bbox.width();
   // ofLog(OF_LOG_NOTICE) << "svg height: " << bbox.height();
 
-  _diagramPix.allocate(bbox.width(), bbox.height(), 3);
+  _diagramPix.setImageType(ofImageType::OF_IMAGE_COLOR_ALPHA);
+  _diagramPix.allocate(bbox.width(), bbox.height(), 4);
 
   for (unsigned int j = 0; j < bbox.height(); j++) {
     for (unsigned int i = 0; i < bbox.width(); i++) {
 
       Magick::ColorRGB c = my_image.pixelColor(i, j);
 
-      _diagramPix.setColor(i, j, ofFloatColor(c.red(), c.green(), c.blue()));
+      _diagramPix.setColor(i, j, ofFloatColor(c.red(), c.green(), c.blue(), c.alpha()));
       // _diagramPix.setColor(i,
       //   j,
       //   ofFloatColor(toOfPixelColor(c.redQuantum()),
