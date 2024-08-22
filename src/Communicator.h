@@ -8,6 +8,15 @@
 #include "ofxOscSender.h"
 #include <memory>
 #include "myThreadChannel.hpp"
+#include <ranges>
+
+#define LOG_COMM_ERROR() ofLogError( "Communicator" ) << __FUNCTION__ << ": "
+#define LOG_COMM_WARNING() ofLogWarning( "Communicator" ) << __FUNCTION__ << ": "
+#define LOG_COMM_NOTICE() ofLogNotice( "Communicator" ) << __FUNCTION__ << ": "
+#define LOG_COMM_VERBOSE() ofLogVerbose( "Communicator" ) << __FUNCTION__ << ": "
+#define LOG_COMM() LOG_COMM_NOTICE()
+
+#define CONTOUR_MAX_POINTS 400
 
 namespace comm {
   // using SenderInData = vector<ofxCvBlob>;
@@ -146,4 +155,13 @@ namespace comm {
 
     void sendShakePositions();
   };
+
+
+  //
+  //
+  // UTILS
+  //
+  //
+
+  auto approximateContour (std::ranges::range auto&& points);
 }

@@ -6,8 +6,32 @@
 #include "ofxOscSender.h"
 #include <vector>
 #include <memory>
+#include <ranges>
+
 
 namespace comm {
+
+  //
+  //
+  // UTILS
+  //
+  //
+
+  //
+  // approximate contour till it fits in CONTOUR_MAX_POINTS
+  //
+
+  auto approximateContour (std::ranges::range auto&& points) {
+    if (std::ranges::size(points)) {
+      return points;
+    }
+
+    int i = 0;
+    auto even_el = [i](int n) mutable { return 0 == i++ % 2; };
+
+    return approximateContour(std::ranges::views::all(points) | std::ranges::views::filter(even_el));
+  }
+
   //
   //
   // COMMUNICATOR
@@ -48,8 +72,7 @@ namespace comm {
   void Communicator::sendContours(vector<ofxCvBlob> contours) {
     std::shared_ptr<SenderInData> cmd = std::make_shared<SenderCountoursCmd>(contours);
 
-
-    // _senderOut.send(cmd);
+    _senderOut.send(cmd);
 
   }
 
@@ -141,7 +164,10 @@ namespace comm {
   void SenderCountoursCmd::send_sendingContours(ofxOscSender oscSender, int numContours) {
     ofxOscMessage msg;
 
+    LOG_COMM() << "send " << numContours << " countours";
+
     msg.setAddress("/contours");
+
     msg.addInt32Arg(numContours);
 
     oscSender.sendMessage(msg, false);
@@ -150,11 +176,19 @@ namespace comm {
   void SenderCountoursCmd::send_countour(ofxOscSender oscSender, ofxCvBlob &contour) {
     ofxOscMessage msg;
 
+    LOG_COMM() << "send countour: " << contour.nPts << " points";
+
+    if (contour.nPts >= CONTOUR_MAX_POINTS) {
+      LOG_COMM_WARNING() << "too many points in contour. approximating it";
+    }
+
+    auto points = approximateContour(std::views::all(contour.pts));
+
     msg.setAddress("/contour");
 
     msg.addInt32Arg(contour.nPts);
 
-    for (ofDefaultVec3 point : contour.pts) {
+    for (ofDefaultVec3 point : points) {
       msg.addFloatArg(point.x);
       msg.addFloatArg(point.y);
     }
@@ -196,5 +230,4 @@ namespace comm {
     m.setAddress("/shake/positions");
     oscSender.sendMessage(m, false);
   }
-
 }
