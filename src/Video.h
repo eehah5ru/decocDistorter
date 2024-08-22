@@ -18,8 +18,8 @@ class Video {
   int         _threshold = 50;
   bool				_bLearnBakground = false;
 
-  const int _width = 320;
-  const int _height = 240;
+  const int _width = 1280;
+  const int _height = 720;
 
   void debugContours();
  public:
