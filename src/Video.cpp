@@ -51,7 +51,7 @@ void Video::update() {
 
     // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
     // also, find holes is set to true so we will get interior contours as well....
-  _contourFinder.findContours(_grayDiff, 20, (_width*_height)/3, 10, true);	// find holes
+  _contourFinder.findContours(_grayDiff, 20, (_width*_height)/3, 10, true, true);	// find holes
 
   // debugContours();
 
