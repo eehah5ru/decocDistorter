@@ -1,10 +1,14 @@
 #include "Video.h"
+#include "Communicator.h"
 #include "constants.hpp"
 #include "ofEvent.h"
 #include "ofEventUtils.h"
 #include "ofEvents.h"
 #include "ofGraphics.h"
 #include "ofMain.h"
+#include "ofPath.h"
+#include "ofPolyline.h"
+#include "ofRectangle.h"
 #include "ofxCvBlob.h"
 
 Video::Video() {
@@ -51,22 +55,27 @@ void Video::update() {
 
     // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
     // also, find holes is set to true so we will get interior contours as well....
-  _contourFinder.findContours(_grayDiff, 20, (_width*_height)/3, 10, true, true);	// find holes
+  _contourFinder.findContours(_grayDiff, 20, (_width*_height)/3, 10, false, true);
 
   // debugContours();
 
 }
 
-void Video::draw() {
-  ofPushStyle();
-  ofSetColor(ofColor::wheat);
-  _grabber.draw(20, 20);
+void Video::drawVideo() {
+  _grabber.draw(0, 0);
+}
 
-  ofFill();
+void Video::drawMetadata() {
+  ofPushStyle();
   ofSetColor(ofColor::deepPink);
 
-  _contourFinder.draw(20, 20);
+  _contourFinder.draw(0, 0);
   ofPopStyle();
+}
+
+void Video::drawAll() {
+  drawVideo();
+  drawMetadata();
 }
 
 void Video::keyPressed(ofKeyEventArgs &key) {
@@ -75,10 +84,12 @@ void Video::keyPressed(ofKeyEventArgs &key) {
       _bLearnBakground = true;
       break;
     case '+':
+      LOG_COMM_VERBOSE() << "theshold++";
       _threshold ++;
       if (_threshold > 255) _threshold = 255;
       break;
     case '-':
+      LOG_COMM_VERBOSE() << "threshold--";
       _threshold --;
       if (_threshold < 0) _threshold = 0;
       break;
@@ -90,6 +101,53 @@ void Video::keyPressed(ofKeyEventArgs &key) {
 //
 vector<ofxCvBlob> &Video::contours() {
   return _contourFinder.blobs;
+}
+
+//
+// convex hulls for contours
+//
+vector<ofPolyline> Video::convexHulls() {
+  vector<ofPolyline> r;
+
+  for (auto contour : contours()) {
+    vector<ofPoint> pts;
+    ofPolyline p;
+
+    for (auto point : contour.pts) {
+      pts.push_back({point.x, point.y});
+    }
+
+    for (auto point :_convexHull.getConvexHull(pts)) {
+      p.addVertex({point.x, point.y, 0});
+    }
+
+    r.push_back(p);
+  }
+
+  return r;
+}
+
+//
+// bounding boxes for contours
+//
+vector<ofPolyline> Video::boundingBoxes() {
+  vector<ofPolyline> r;
+
+  for (auto contour : contours()) {
+    vector<ofPoint> pts;
+    ofPolyline p;
+
+    p.addVertex(contour.boundingRect.getTopLeft());
+    p.addVertex(contour.boundingRect.getTopRight());
+    p.addVertex(contour.boundingRect.getBottomRight());
+    p.addVertex(contour.boundingRect.getBottomLeft());
+
+    r.push_back(p);
+  }
+
+  return r;
+
+
 }
 
 //

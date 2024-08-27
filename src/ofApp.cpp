@@ -1,5 +1,7 @@
 #include "ofApp.h"
+#include "ofAppRunner.h"
 #include "ofColor.h"
+#include "ofEvents.h"
 #include "ofGraphics.h"
 
 //--------------------------------------------------------------
@@ -16,15 +18,15 @@ void ofApp::setup(){
 void ofApp::update(){
   _video.update();
   _diagram.update();
-
-  _communicator.sendContours(_video.contours());
+  // cerr << "ww: " << ofGetWindowWidth() << " wh: " << ofGetWindowHeight() << " w: " << ofGetWidth() << " h: " << ofGetHeight() << endl;
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
   ofBackground(ofColor::hotPink);
-   _video.draw();
+   _video.drawVideo();
   _diagram.draw();
+  _video.drawMetadata();
 }
 
 //--------------------------------------------------------------
@@ -34,7 +36,6 @@ void ofApp::exit(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
 }
 
 //--------------------------------------------------------------
@@ -44,7 +45,7 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-  _communicator.sendMouse(x, y);
+  // _communicator.sendMouse(x, y);
 }
 
 //--------------------------------------------------------------
@@ -59,6 +60,7 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
+  _communicator.sendContours(_video.boundingBoxes());  
   _communicator.sendShakePositions();
 }
 

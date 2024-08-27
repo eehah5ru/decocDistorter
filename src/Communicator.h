@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofPolyline.h"
 #include "ofThread.h"
 #include "ofThreadChannel.h"
 #include "ofxCvBlob.h"
@@ -16,7 +17,7 @@
 #define LOG_COMM_VERBOSE() ofLogVerbose( "Communicator" ) << __FUNCTION__ << ": "
 #define LOG_COMM() LOG_COMM_NOTICE()
 
-#define CONTOUR_MAX_POINTS 400
+#define CONTOUR_MAX_POINTS 20
 
 namespace comm {
   // using SenderInData = vector<ofxCvBlob>;
@@ -60,14 +61,14 @@ namespace comm {
   // Send contours
   //
   class SenderCountoursCmd : public SenderInData{
-    vector<ofxCvBlob> _contours;
+    vector<ofPolyline> _contours;
 
     void send_sendingContours(ofxOscSender oscSender, int numContours);
 
-    void send_countour(ofxOscSender oscSender, ofxCvBlob &contour);
+    void send_countour(ofxOscSender oscSender, ofPolyline &contour);
 
   public:
-    SenderCountoursCmd(vector<ofxCvBlob> contours);
+    SenderCountoursCmd(vector<ofPolyline> contours);
     // ~SenderCountoursCmd();
 
     friend void swap(SenderCountoursCmd& a, SenderCountoursCmd& b) noexcept
@@ -151,6 +152,9 @@ namespace comm {
 
     void sendContours(vector<ofxCvBlob> contours);
 
+    void sendContours(vector<ofPolyline> contours);
+
+
     void sendMouse(int x, int y);
 
     void sendShakePositions();
@@ -163,5 +167,5 @@ namespace comm {
   //
   //
 
-  auto approximateContour (std::ranges::range auto&& points);
+  // auto approximateContour (std::ranges::range auto& points);
 }

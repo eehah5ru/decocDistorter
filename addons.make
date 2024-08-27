@@ -2,3 +2,4 @@ ofxNetwork
 ofxOpenCv
 ofxOsc
 ofxThreadedImageLoader
+ofxConvexHull
