@@ -2,6 +2,7 @@
 
 #include "Communicator.h"
 #include "ofAppRunner.h"
+#include "ofEventUtils.h"
 #include "ofMathConstants.h"
 #include "ofPolyline.h"
 #include "ofxCvBlob.h"
@@ -30,6 +31,7 @@ namespace comm {
 
     LOG_COMM_WARNING() << "too many points in contour: " << points.size() << " approximating it";
 
+    // points.simplify(0.3);
     vector<ofDefaultVec3> r;
 
     int i = 0;
@@ -41,13 +43,24 @@ namespace comm {
     return approximateContour(r);
   }
 
+  void simplifyContour (ofPolyline &points) {
+
+
+    while (points.size() >= CONTOUR_MAX_POINTS) {
+      // LOG_COMM_WARNING() << "too many points in contour: " << points.size() << " approximating it";
+
+      points.simplify(100.0f);
+    }
+  }
+
   //
   //
   // COMMUNICATOR
   //
   //
   Communicator::Communicator()
-    : _sender{_senderOut} {
+    : _sender{_senderOut}
+    , onMapUpdated{} {
   }
 
   Communicator::~Communicator() {
@@ -58,8 +71,23 @@ namespace comm {
   //
   void Communicator::setup() {
     _sender.setup();
+    // FIXME: unhardcode
+    _receiver.setup(12346);
 
     _sender.startThread();
+  }
+
+  //
+  // UPDATE
+  //
+  void Communicator::update () {
+    while (_receiver.hasWaitingMessages()) {
+      ofxOscMessage m;
+      _receiver.getNextMessage(m);
+
+      int r = 1;
+      ofNotifyEvent(onMapUpdated, r, this);
+    }
   }
 
   //
@@ -203,6 +231,8 @@ namespace comm {
     ofxOscMessage msg;
 
     LOG_COMM() << "sending countour with " << contour.size() << " points";
+
+    // simplifyContour(contour);
 
     // auto points = approximateContour(contour);
 

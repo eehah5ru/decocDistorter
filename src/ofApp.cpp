@@ -1,6 +1,7 @@
 #include "ofApp.h"
 #include "ofAppRunner.h"
 #include "ofColor.h"
+#include "ofEventUtils.h"
 #include "ofEvents.h"
 #include "ofGraphics.h"
 
@@ -12,11 +13,14 @@ void ofApp::setup(){
   _diagram.setup();
 
   _communicator.setup();
+
+  ofAddListener(_communicator.onMapUpdated, this, &ofApp::onMapUpdated);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
   _video.update();
+  _communicator.update();
   _diagram.update();
   // cerr << "ww: " << ofGetWindowWidth() << " wh: " << ofGetWindowHeight() << " w: " << ofGetWidth() << " h: " << ofGetHeight() << endl;
 }
@@ -33,6 +37,23 @@ void ofApp::draw(){
 void ofApp::exit(){
   _communicator.exit();
 }
+
+//
+// 
+// custom events
+//
+//
+
+//
+// on map updated on disk
+// 
+void ofApp::onMapUpdated (int &isUpdated) {
+  _diagram.loadDiagram();
+}
+
+//
+// standard events
+// 
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
@@ -60,7 +81,7 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-  _communicator.sendContours(_video.boundingBoxes());  
+  _communicator.sendContours(_video.polylineContours());  
   _communicator.sendShakePositions();
 }
 
@@ -93,3 +114,5 @@ void ofApp::gotMessage(ofMessage msg){
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
 
 }
+
+

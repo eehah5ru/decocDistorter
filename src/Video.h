@@ -25,6 +25,8 @@ class Video {
   ofxConvexHull _convexHull;
 
   int         _threshold = 50;
+  float _simplificationFactor = 50;
+
   bool				_bLearnBakground = false;
 
   const int _width = 1280;
@@ -49,6 +51,8 @@ class Video {
 
 
   vector<ofxCvBlob> &contours();
+
+  vector<ofPolyline> polylineContours();
 
   vector<ofPolyline> convexHulls();
 

@@ -14,6 +14,8 @@ class ofApp : public ofBaseApp{
 
   Communicator _communicator;
   
+
+  void onMapUpdated(int&);
   
 	public:
 		void setup() override;

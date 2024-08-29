@@ -1,14 +1,18 @@
 #include "Video.h"
 #include "Communicator.h"
 #include "constants.hpp"
+#include "ofColor.h"
 #include "ofEvent.h"
 #include "ofEventUtils.h"
 #include "ofEvents.h"
 #include "ofGraphics.h"
+#include "ofGraphicsConstants.h"
 #include "ofMain.h"
 #include "ofPath.h"
+#include "ofPixels.h"
 #include "ofPolyline.h"
 #include "ofRectangle.h"
+#include "ofUtils.h"
 #include "ofxCvBlob.h"
 
 Video::Video() {
@@ -27,10 +31,16 @@ void Video::setup() {
   _grayBg.allocate(_width, _height);
   _grayDiff.allocate(_width, _height);
 
-  _bLearnBakground = true;
+  // _bLearnBakground = true;
   _threshold = 80;
 
   ofAddListener(ofEvents().keyPressed, this, &Video::keyPressed);
+
+  ofPixels gray;
+  gray.allocate(_grabber.getWidth(), _grabber.getHeight(), OF_IMAGE_GRAYSCALE);
+  gray.setColor(ofColor().gray);
+
+  _grayBg.setFromPixels(gray);
 }
 
 void Video::update() {
@@ -70,6 +80,16 @@ void Video::drawMetadata() {
   ofSetColor(ofColor::deepPink);
 
   _contourFinder.draw(0, 0);
+
+  ofSetColor(ofColor::red);
+  for (auto hull : polylineContours()) {
+    hull.draw();
+  }
+
+  ofSetColor(ofColor::darkCyan);
+  ofDrawBitmapString("threshold: " + ofToString(_threshold), 20, 20);
+  ofDrawBitmapString("simplification: " + ofToString(_simplificationFactor), 20, 40);
+
   ofPopStyle();
 }
 
@@ -80,19 +100,44 @@ void Video::drawAll() {
 
 void Video::keyPressed(ofKeyEventArgs &key) {
   switch (key.key){
-    case ' ':
-      _bLearnBakground = true;
-      break;
-    case '+':
-      LOG_COMM_VERBOSE() << "theshold++";
-      _threshold ++;
-      if (_threshold > 255) _threshold = 255;
-      break;
-    case '-':
-      LOG_COMM_VERBOSE() << "threshold--";
-      _threshold --;
-      if (_threshold < 0) _threshold = 0;
-      break;
+  case ' ':
+    _bLearnBakground = true;
+    break;
+  case '+':
+    LOG_COMM_VERBOSE() << "theshold++";
+    _threshold++;
+    if (_threshold > 255) _threshold = 255;
+    break;
+  case '-':
+    LOG_COMM_VERBOSE() << "threshold--";
+    _threshold--;
+    if (_threshold < 0) _threshold = 0;
+    break;
+  case 'w':
+    LOG_VIDEO_VERBOSE() << "_simplificationFactor++";
+    if (_simplificationFactor > 10) {
+      _simplificationFactor += 10;
+    } else if(_simplificationFactor > 1){
+      _simplificationFactor += 1;
+    } else {
+      _simplificationFactor += 0.1;
+    }
+    break;
+  case 'q':
+    LOG_VIDEO_VERBOSE() << "_simplificationFactor--";
+    if (_simplificationFactor >= 20) {
+      _simplificationFactor -= 10;
+    } else if(_simplificationFactor > 1){
+      _simplificationFactor -= 1;
+    } else {
+      _simplificationFactor -= 0.1;
+    }
+
+    if (_simplificationFactor <= 0.0) {
+      _simplificationFactor = 0.1;
+    }
+    break;
+
   }
 }
 
@@ -101,6 +146,39 @@ void Video::keyPressed(ofKeyEventArgs &key) {
 //
 vector<ofxCvBlob> &Video::contours() {
   return _contourFinder.blobs;
+}
+
+void simplifyContour (ofPolyline &points, float factor) {
+  float f = factor;
+
+  while (points.size() >= CONTOUR_MAX_POINTS) {
+    // LOG_COMM_WARNING() << "too many points in contour: " << points.size() << " approximating it";
+    int s = points.size();
+
+    points.simplify(f);
+
+    if (points.size() == s) {
+      f *= 2;
+    }
+  }
+}
+
+vector<ofPolyline> Video::polylineContours() {
+  vector<ofPolyline> r;
+
+  for (auto contour : contours()) {
+    ofPolyline p;
+
+    for (auto pt : contour.pts) {
+      p.addVertex({pt.x, pt.y, 0});
+    }
+    p.setClosed(true);
+    simplifyContour(p, _simplificationFactor);
+
+    r.push_back(p);
+  }
+
+  return r;
 }
 
 //

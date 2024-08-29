@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ofEvent.h"
+#include "ofEvents.h"
 #include "ofMain.h"
 #include "ofPolyline.h"
 #include "ofThread.h"
@@ -142,11 +144,19 @@ namespace comm {
 
     Sender _sender;
 
+    ofxOscReceiver _receiver;
+
+
   public:
+
+    ofEvent<int> onMapUpdated;
+
     Communicator();
     ~Communicator();
 
     void setup();
+
+    void update ();
 
     void exit();
 
