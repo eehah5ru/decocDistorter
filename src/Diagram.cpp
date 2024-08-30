@@ -118,7 +118,6 @@ void Diagram::setup() {
 void Diagram::update() {
   // loadDiagram(DIAGRAM_FILE);
 
-
   // update diagram is there is one
   auto d = _loader.tryGetDiagram();
   if (d.has_value()) {
@@ -127,6 +126,10 @@ void Diagram::update() {
     _diagramImage.setFromPixels(d.value());
 
     recalculateScales();
+
+    int r = 1;
+    ofNotifyEvent(onUpdated, r, this);
+
   }
 
 }

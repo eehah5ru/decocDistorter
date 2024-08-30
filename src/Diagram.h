@@ -54,6 +54,7 @@ class Diagram {
   void recalculateScales();
 
  public:
+  ofEvent<int> onUpdated;
 
   Diagram();
   ~Diagram();

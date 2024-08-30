@@ -5,6 +5,7 @@
 #include "ofEvent.h"
 #include "ofEventUtils.h"
 #include "ofEvents.h"
+#include "ofFileUtils.h"
 #include "ofGraphics.h"
 #include "ofGraphicsConstants.h"
 #include "ofMain.h"
@@ -14,17 +15,153 @@
 #include "ofRectangle.h"
 #include "ofUtils.h"
 #include "ofxCvBlob.h"
+#include <cstddef>
+#include <memory>
+#include <stdexcept>
+#include <variant>
 
-Video::Video() {
+void not_implemented() {
+  throw std::logic_error("myFunction is not implemented yet.");
 }
+// //
+// //
+// //
+// void NullVideoSource::setup() {
+//   not_implemented();
+// }
+
+// void NullVideoSource::update() {
+//   not_implemented();
+// }
+
+// void NullVideoSource::draw(int x, int y) {
+//   not_implemented();
+// }
+
+// int NullVideoSource::getWidth() {
+//   not_implemented();
+// }
+
+// int NullVideoSource::getHeight() {
+//   not_implemented();
+// }
+
+// bool NullVideoSource::isFrameNew() {
+//   not_implemented();
+// }
+
+// ofPixels& getPixels() {
+//   not_implemented();
+// }
+//
+// CameraSource
+//
+CameraSource::CameraSource() {}
+
+CameraSource::~CameraSource() {};
+
+size_t CameraSource::getWidth() {
+  return _width;
+}
+
+size_t CameraSource::getHeight() {
+  return _height;
+}
+
+void CameraSource::setup() {
+  _grabber.setVerbose(true);
+  _grabber.setup(_width, _height);
+}
+
+void CameraSource::update() {
+  _grabber.update();
+}
+
+void CameraSource::draw(int x, int y) {
+  _grabber.draw(x, y);
+}
+
+bool CameraSource::isFrameNew() {
+  return _grabber.isFrameNew();
+}
+
+ofPixels& CameraSource::getPixels() {
+  return _grabber.getPixels();
+}
+
+//
+// file source
+//
+// FileSource::FileSource() {}
+
+// FileSource::~FileSource() {};
+
+size_t FileSource::getWidth() {
+  return _width;
+}
+
+size_t FileSource::getHeight() {
+  return _height;
+}
+
+void FileSource::setup() {
+  string path = ofGetEnv("VIDEO_FILE_NAME", "");
+
+  if (path.empty()) {
+    throw std::invalid_argument("VIDEO_FILE_NAME is not set");
+  }
+
+  string dataPath = ofToDataPath(path);
+  ofFile file{dataPath};
+
+  if (!file.exists()) {
+    throw std::invalid_argument(std::format("video file does not exist: {}", dataPath));
+  }
+
+  _player.load(dataPath);
+  _player.play();
+
+  // _grabber.setVerbose(true);
+  // _grabber.setup(_width, _height);
+}
+
+void FileSource::update() {
+  _player.update();
+}
+
+void FileSource::draw(int x, int y) {
+  _player.draw(x, y);
+  // _grabber.draw(x, y);
+}
+
+bool FileSource::isFrameNew() {
+  return _player.isFrameNew();
+}
+
+ofPixels& FileSource::getPixels() {
+  return _player.getPixels();
+  // return ofPixels();
+  // return _grabber.getPixels();
+}
+
+
+//
+// video
+//
+Video::Video() {}
 
 Video::~Video() {
   ofRemoveListener(ofEvents().keyPressed, this, &Video::keyPressed);
 }
 
 void Video::setup() {
-  _grabber.setVerbose(true);
-  _grabber.setup(_width, _height);
+  // _source = CameraSource();
+
+  _source = FileSource();
+
+  std::visit([&](auto &&s) {
+    s.setup();
+  }, _source);
 
   _colorImg.allocate(_width, _height);
   _grayImage.allocate(_width, _height);
@@ -37,20 +174,27 @@ void Video::setup() {
   ofAddListener(ofEvents().keyPressed, this, &Video::keyPressed);
 
   ofPixels gray;
-  gray.allocate(_grabber.getWidth(), _grabber.getHeight(), OF_IMAGE_GRAYSCALE);
-  gray.setColor(ofColor().gray);
+
+  visit([&gray](auto &&s) {
+    gray.allocate(s.getWidth(), s.getHeight(), OF_IMAGE_GRAYSCALE);
+  }, _source);
+  gray.setColor(ofColor().white);
 
   _grayBg.setFromPixels(gray);
 }
 
 void Video::update() {
-  _grabber.update();
+  visit([](auto &&s) {
+    s.update();
+  }, _source);
 
-  if (!_grabber.isFrameNew()) {
+  if (!visit([](auto &&s){ return s.isFrameNew(); }, _source)) {
     return;
   }
 
-  _colorImg.setFromPixels(_grabber.getPixels());
+  visit([&](auto &&s) {
+    _colorImg.setFromPixels(s.getPixels());
+  }, _source);
 
   // FIXME! copy
   // and conversion to gray
@@ -72,7 +216,9 @@ void Video::update() {
 }
 
 void Video::drawVideo() {
-  _grabber.draw(0, 0);
+  std::visit([](auto &&s) {
+    s.draw(0, 0);
+  }, _source);
 }
 
 void Video::drawMetadata() {

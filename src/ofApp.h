@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ofImage.h"
 #include "ofMain.h"
 #include "Video.h"
 #include "Diagram.h"
@@ -13,9 +14,12 @@ class ofApp : public ofBaseApp{
   Diagram _diagram;
 
   Communicator _communicator;
-  
+
+  ofImage _screen;
+
 
   void onMapUpdated(int&);
+  void onDiagramUpdated(int&);
   
 	public:
 		void setup() override;

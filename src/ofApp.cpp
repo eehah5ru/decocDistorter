@@ -1,9 +1,15 @@
 #include "ofApp.h"
+#include "Video.h"
 #include "ofAppRunner.h"
 #include "ofColor.h"
 #include "ofEventUtils.h"
 #include "ofEvents.h"
 #include "ofGraphics.h"
+
+
+// ofApp::ofApp()
+//   : _video({1280, 720}) {
+// }
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -15,7 +21,9 @@ void ofApp::setup(){
   _communicator.setup();
 
   ofAddListener(_communicator.onMapUpdated, this, &ofApp::onMapUpdated);
-}
+  ofAddListener(_diagram.onUpdated, this, &ofApp::onDiagramUpdated);
+  
+}  
 
 //--------------------------------------------------------------
 void ofApp::update(){
@@ -28,9 +36,12 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
   ofBackground(ofColor::hotPink);
-   _video.drawVideo();
+  _video.drawVideo();
   _diagram.draw();
+  _screen.grabScreen(0, 0 , ofGetWidth(), ofGetHeight());
+  _screen.save(std::format("frames/frame_{:0>8}.png", ofGetFrameNum()));
   _video.drawMetadata();
+  
 }
 
 //--------------------------------------------------------------
@@ -49,6 +60,13 @@ void ofApp::exit(){
 // 
 void ofApp::onMapUpdated (int &isUpdated) {
   _diagram.loadDiagram();
+}
+
+// on map updated in app
+// 
+void ofApp::onDiagramUpdated (int &isUpdated) {
+  _communicator.sendContours(_video.polylineContours());  
+  _communicator.sendShakePositions();
 }
 
 //
@@ -81,8 +99,6 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-  _communicator.sendContours(_video.polylineContours());  
-  _communicator.sendShakePositions();
 }
 
 //--------------------------------------------------------------
