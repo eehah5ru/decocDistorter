@@ -3,6 +3,7 @@
 #include "ofEvent.h"
 #include "ofEvents.h"
 #include "ofMain.h"
+#include "ofPoint.h"
 #include "ofPolyline.h"
 #include "ofThread.h"
 #include "ofThreadChannel.h"
@@ -98,9 +99,32 @@ namespace comm {
   };
 
   //
-  // Shake positions CMD
+  // Send Mouse
   //
-  class SenderShakePositionsCmd : public SenderInData {
+  class SenderFocusCmd : public SenderInData {
+    ofPoint _focus;
+    float _radius;
+
+  public:
+    SenderFocusCmd(ofPoint focus, float radius);
+
+    void virtual send(ofxOscSender &oscSender) override;
+
+  };
+
+
+  //
+  // Shake positions in contours CMD
+  //
+  class SenderShakePositionsInContoursCmd : public SenderInData {
+  public:
+    void virtual send(ofxOscSender &oscSender) override;
+  };
+
+  //
+  // Shake positions near focusCMD
+  //
+  class SenderShakePositionsNearFocusCmd : public SenderInData {
   public:
     void virtual send(ofxOscSender &oscSender) override;
   };
@@ -156,7 +180,9 @@ namespace comm {
 
     void setup();
 
-    void update ();
+    void updateAsync ();
+
+    void waitUnillNextIncomingMessage();
 
     void exit();
 
@@ -166,8 +192,12 @@ namespace comm {
 
 
     void sendMouse(int x, int y);
+    void sendFocus(ofPoint, float radius);
 
-    void sendShakePositions();
+
+    void sendShakePositionsNearFocus();
+    void sendShakePositionsInContours();
+
   };
 
 

@@ -4,10 +4,13 @@
 #include "ofAppRunner.h"
 #include "ofEventUtils.h"
 #include "ofMathConstants.h"
+#include "ofPoint.h"
 #include "ofPolyline.h"
 #include "ofxCvBlob.h"
 #include "ofxOscMessage.h"
 #include "ofxOscSender.h"
+#include "settings.h"
+#include <stdexcept>
 #include <vector>
 #include <memory>
 
@@ -78,15 +81,30 @@ namespace comm {
   }
 
   //
-  // UPDATE
+  // UPDATE ASYNC ONLY
   //
-  void Communicator::update () {
+  void Communicator::updateAsync () {
+    if (!APP_ASYNC_MODE) {
+      throw std::logic_error("updateAsync possible only in APP_ASYNC_MODE");
+    }
+    // currently waiting only one message = map updated
     while (_receiver.hasWaitingMessages()) {
       ofxOscMessage m;
       _receiver.getNextMessage(m);
 
       int r = 1;
       ofNotifyEvent(onMapUpdated, r, this);
+    }
+  }
+
+  void Communicator::waitUnillNextIncomingMessage() {
+    ofxOscMessage m;
+
+    if(_receiver.getNextMessageBlocking(m)) {
+      int r = 1;
+      ofNotifyEvent(onMapUpdated, r, this);
+    } else {
+      throw std::logic_error("receiver was closed. logic error");
     }
   }
 
@@ -145,10 +163,33 @@ namespace comm {
   }
 
   //
-  // send shake poositions
+  // send focus position
   //
-  void Communicator::sendShakePositions() {
-    auto cmd = std::make_shared<SenderShakePositionsCmd>();
+  void Communicator::sendFocus(ofPoint focus, float radius) {
+    if ( (focus.x > 1) || (focus.y > 1)) {
+      throw std::invalid_argument("focus must be 0..1");
+    }
+
+    std::shared_ptr<SenderInData> cmd = std::make_shared<SenderFocusCmd>(focus, radius);
+
+    _senderOut.send(cmd);
+  }
+
+
+  //
+  // send shake poositions NEAR FOCUS
+  //
+  void Communicator::sendShakePositionsNearFocus() {
+    auto cmd = std::make_shared<SenderShakePositionsNearFocusCmd>();
+
+    _senderOut.send(cmd);
+  }
+
+  //
+  // send shake poositions IN CONTOURS
+  //
+  void Communicator::sendShakePositionsInContours() {
+    auto cmd = std::make_shared<SenderShakePositionsInContoursCmd>();
 
     _senderOut.send(cmd);
   }
@@ -275,15 +316,47 @@ namespace comm {
     oscSender.sendMessage(m, false);
   }
 
+  //
+  //
+  // SENDER CMD / MOUSE
+  //
+  //
+
+  SenderFocusCmd::SenderFocusCmd(ofPoint focus, float radius)
+    : _focus{focus}
+    , _radius{radius} {}
+
+  void SenderFocusCmd::send(ofxOscSender &oscSender) {
+
+    ofxOscMessage m;
+    m.setAddress("/focus/position");
+    m.addFloatArg(_focus.x);
+    m.addFloatArg(_focus.y);
+    m.addFloatArg(_radius);
+    oscSender.sendMessage(m, false);
+  }
+
+
 
   //
   //
-  // SENDER CMD / SHAKE POSITIONS
+  // SENDER CMD / CONTOURS / SHAKE POSITIONS
   //
   //
-  void SenderShakePositionsCmd::send(ofxOscSender &oscSender) {
+  void SenderShakePositionsInContoursCmd::send(ofxOscSender &oscSender) {
     ofxOscMessage m;
-    m.setAddress("/shake/positions");
+    m.setAddress("/shake/positions/in-contours");
+    oscSender.sendMessage(m, false);
+  }
+
+  //
+  //
+  // SENDER CMD / FOCUS / SHAKE POSITIONS
+  //
+  //
+  void SenderShakePositionsNearFocusCmd::send(ofxOscSender &oscSender) {
+    ofxOscMessage m;
+    m.setAddress("/shake/positions/near-focus");
     oscSender.sendMessage(m, false);
   }
 }

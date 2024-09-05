@@ -5,20 +5,38 @@
 #include "ofEventUtils.h"
 #include "ofEvents.h"
 #include "ofGraphics.h"
+#include "ofGraphicsBaseTypes.h"
 #include "ofGraphicsConstants.h"
+#include "ofImage.h"
 #include "ofMain.h"
 #include "ofShader.h"
 #include "ofThread.h"
+#include "settings.h"
+#include <iostream>
+#include <memory>
 #include <optional>
+#include <utility>
 
 
 //
 // diagram loader
 //
 
-DiagramLoader::DiagramLoader() {};
+DiagramLoader::DiagramLoader(bool isAsync)
+  :_isAsync(isAsync) {};
 
-void DiagramLoader::load(string path) {
+void DiagramLoader::loadSync(string path) {
+  _path = path;
+
+  doLoad();
+  LOG_DIAGRAM_NOTICE() << "sync: diagram was loaded";
+
+  _loaded = true;
+  _loading = false;
+
+}
+
+void DiagramLoader::loadAsync(string path) {
   if (_loading) {
     LOG_DIAGRAM_WARNING() << "diagram is being loaded. ignoring";
     return;
@@ -33,6 +51,15 @@ void DiagramLoader::load(string path) {
   _loaded = false;
   _loading = true;
   startThread();
+
+}
+
+void DiagramLoader::load(string path) {
+  if (_isAsync) {
+    loadAsync(path);
+  } else {
+    loadSync(path);
+  }
 }
 
 void DiagramLoader::doLoad() {
@@ -77,7 +104,7 @@ void DiagramLoader::doLoad() {
 
 void DiagramLoader::threadedFunction(){
   doLoad();
-  LOG_DIAGRAM_NOTICE() << "diagram was loaded";
+  LOG_DIAGRAM_NOTICE() << "async: diagram was loaded";
   _loading = false;
   _loaded = true;
 }
@@ -129,7 +156,6 @@ void Diagram::update() {
 
     int r = 1;
     ofNotifyEvent(onUpdated, r, this);
-
   }
 
 }
@@ -151,6 +177,22 @@ void Diagram::draw () {
   ofPopStyle();
   ofPopView();
 }
+
+shared_ptr<ofFloatImage> Diagram::getImage() {
+  shared_ptr<ofFloatImage> i = make_shared<ofFloatImage>();
+
+  // ofImageType
+  LOG_DIAGRAM_VERBOSE() << "_diagramImage type" << _diagramImage.getImageType();
+  LOG_DIAGRAM_VERBOSE() << "_diagramImage.pixels type" << _diagramImage.getPixels().getImageType();
+  LOG_DIAGRAM_VERBOSE() << "_diagramImage.pixels format" << _diagramImage.getPixels().getPixelFormat();
+
+  ofFloatPixels px = _diagramImage.getPixels();
+
+  i->setFromPixels(px);
+  i->setImageType(OF_IMAGE_COLOR_ALPHA);
+  return i;
+}
+
 
 //
 //

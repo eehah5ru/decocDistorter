@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ofColor.h"
+#include "ofFbo.h"
 #include "settings.h"
 #include "ofEvents.h"
 #include "ofMain.h"
@@ -20,24 +22,6 @@
 #define LOG_VIDEO_VERBOSE() ofLogVerbose( "VIDEO" ) << __FUNCTION__ << ": "
 #define LOG_VIDEO() LOG_VIDEO_NOTICE()
 
-
-
-// class VideoSource{
-// public:
-
-//   // virtual ~VideoSource() = ;
-
-//   virtual void setup() = 0;
-//   virtual void update() = 0;
-//   virtual void draw(int x, int y) = 0;
-//   virtual size_t getWidth() = 0;
-//   virtual size_t getHeight() = 0;
-//   virtual bool isFrameNew() = 0;
-//   virtual ofPixels& getPixels() = 0;
-
-// };
-
-
 class CameraSource {
   ofVideoGrabber _grabber;
 
@@ -55,8 +39,13 @@ public:
   size_t getHeight();
   bool isFrameNew();
   ofPixels& getPixels();
+  ofPoint getFocus();
+  float getFocusRadius();
 };
 
+//
+// FILE SOURCE
+//
 class FileSource {
   ofVideoPlayer _player;
 
@@ -73,6 +62,46 @@ public:
   size_t getHeight();
   bool isFrameNew();
   ofPixels& getPixels();
+  ofPoint getFocus();
+  float getFocusRadius();
+
+};
+
+//
+// CIRCLE SOURCE
+//
+class CircleSource {
+
+  int _radius = CIRCLE_RADIUS;
+  ofColor _color = ofColor::blue;
+  ofColor _bkgColor = ofColor::wheat;
+  float _speed = CIRCLE_SPEED;
+
+  ofFbo _fbo;
+  ofPixels _pixels;
+  int _lastFrame = 0;
+
+  float _currentPos = 0.0;
+
+  ofPolyline _path;
+
+  void createRandomPolyline(ofPoint start);
+  ofPoint getRandomPoint();
+
+public:
+
+  // CameraSource(int width, int height);
+
+  void setup();
+  void update();
+  void draw(int x, int y);
+  size_t getWidth();
+  size_t getHeight();
+  bool isFrameNew();
+  ofPixels& getPixels();
+  ofPoint getFocus();
+  float getFocusRadius();
+
 };
 
 
@@ -80,7 +109,7 @@ class Video {
   int _width = APP_WIDTH;
   int _height = APP_HEIGHT;
 
-  std::variant<CameraSource, FileSource> _source;
+  std::variant<CameraSource, FileSource, CircleSource> _source;
 
   // std::unique_ptr<VideoSource> _source = std::make_unique<CameraSource>(nullptr);
 
@@ -111,6 +140,8 @@ class Video {
   void drawVideo();
   void drawMetadata();
 
+  ofPoint getFocus();
+  float getFocusRadius();
 
   void keyPressed (ofKeyEventArgs &key);
 

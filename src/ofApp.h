@@ -1,10 +1,19 @@
 #pragma once
 
+#include "Recorder.hpp"
+#include "ofGraphicsBaseTypes.h"
 #include "ofImage.h"
 #include "ofMain.h"
 #include "Video.h"
 #include "Diagram.h"
 #include "Communicator.h"
+
+#define LOG_APP_ERROR() ofLogError( "APP" ) << __FUNCTION__ << ": "
+#define LOG_APP_WARNING() ofLogWarning( "APP" ) << __FUNCTION__ << ": "
+#define LOG_APP_NOTICE() ofLogNotice( "APP" ) << __FUNCTION__ << ": "
+#define LOG_APP_VERBOSE() ofLogVerbose( "APP" ) << __FUNCTION__ << ": "
+#define LOG_APP() LOG_APP_NOTICE()
+
 
 using namespace comm;
 
@@ -15,11 +24,18 @@ class ofApp : public ofBaseApp{
 
   Communicator _communicator;
 
-  ofImage _screen;
+  Recorder<ofImage> _compositeRecorder;
 
+  Recorder<ofFloatImage> _diagramRecorder;
 
   void onMapUpdated(int&);
   void onDiagramUpdated(int&);
+
+  void updateSync();
+  void updateAsync();
+
+  void sendShakeCommandSync();
+  void sendShakeCommandAsync();
   
 	public:
 		void setup() override;

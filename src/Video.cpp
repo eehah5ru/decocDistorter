@@ -1,6 +1,7 @@
 #include "Video.h"
 #include "Communicator.h"
 #include "constants.hpp"
+#include "ofAppRunner.h"
 #include "ofColor.h"
 #include "ofEvent.h"
 #include "ofEventUtils.h"
@@ -9,12 +10,17 @@
 #include "ofGraphics.h"
 #include "ofGraphicsConstants.h"
 #include "ofMain.h"
+#include "ofMath.h"
 #include "ofPath.h"
 #include "ofPixels.h"
+#include "ofPoint.h"
 #include "ofPolyline.h"
+#include "ofRandomDistributions.h"
 #include "ofRectangle.h"
 #include "ofUtils.h"
 #include "ofxCvBlob.h"
+#include "settings.h"
+#include <cmath>
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
@@ -89,6 +95,14 @@ ofPixels& CameraSource::getPixels() {
   return _grabber.getPixels();
 }
 
+ofPoint CameraSource::getFocus() {
+  return {0.5, 0.5};
+}
+
+float CameraSource::getFocusRadius() {
+  return 0.5;
+}
+
 //
 // file source
 //
@@ -144,6 +158,127 @@ ofPixels& FileSource::getPixels() {
   // return _grabber.getPixels();
 }
 
+ofPoint FileSource::getFocus() {
+  return {0.5, 0.5};
+}
+
+float FileSource::getFocusRadius() {
+  return 0.5;
+}
+
+//
+// CIRCLE SOURCE
+//
+void CircleSource::setup() {
+  _fbo.allocate(APP_WIDTH, APP_HEIGHT);
+  _pixels.allocate(APP_WIDTH, APP_HEIGHT, OF_IMAGE_COLOR);
+
+
+  createRandomPolyline(getRandomPoint());
+
+  // set position to beginning ot
+  _currentPos = 0.0;
+}
+
+void CircleSource::update() {
+  _lastFrame = ofGetFrameNum();
+
+  // LOG_VIDEO_VERBOSE() << "updating";
+
+  // update currentPos
+  _currentPos = _currentPos + _speed;
+
+  if(_currentPos >= 1.0) {
+    // LOG_VIDEO_VERBOSE() << "pos >= 1: " << _currentPos;
+
+    _currentPos = 0;
+    createRandomPolyline(_path.getPointAtPercent(1));
+  }
+
+  // LOG_VIDEO_VERBOSE() << "updated pos: " << _currentPos;
+
+}
+
+// use x and y to translate origin
+void CircleSource::draw(int x, int y) {
+  if(!isFrameNew()) {
+    return;
+  }
+
+  // LOG_VIDEO_VERBOSE() << "circle drawing: " << _path.getPointAtPercent(_currentPos);
+
+  ofPushStyle();
+
+  _fbo.begin();
+  ofClear(_bkgColor);
+  // ofBackground(_bkgColor);
+  ofSetColor(_color);
+  ofFill();
+  // ofBackground(_color);
+  ofPoint p = _path.getPointAtPercent(_currentPos);
+  ofDrawCircle(p, _radius);
+  // draw polyling for debug
+  // ofSetColor(ofColor::cyan);
+  // _path.draw();
+
+  _fbo.end();
+
+  _fbo.draw(x, y);
+
+  ofPopStyle();
+
+  // ofDrawCircle(_x, _y, _radius);
+
+}
+
+size_t CircleSource::getWidth() {
+  return APP_WIDTH;
+}
+
+size_t CircleSource::getHeight() {
+  return APP_HEIGHT;
+}
+
+bool CircleSource::isFrameNew() {
+  return _lastFrame <= ofGetFrameNum();
+}
+
+ofPixels& CircleSource::getPixels() {
+  _fbo.readToPixels(_pixels);
+  return _pixels;
+}
+
+
+void CircleSource::createRandomPolyline(ofPoint start) {
+  _path.clear();
+
+  _path.addVertex(start);
+
+  for(int i : std::views::iota(0, 10)) {
+    ofPoint c1 = getRandomPoint();
+    ofPoint c2 = getRandomPoint();
+    ofPoint to = getRandomPoint();
+
+    _path.bezierTo(c1, c2, to);
+  }
+}
+
+ofPoint CircleSource::getRandomPoint() {
+  return {ofRandom(0, getWidth()), ofRandom(0, getHeight())};
+}
+
+ofPoint CircleSource::getFocus() {
+  ofPoint p = _path.getPointAtPercent(_currentPos);
+
+  return {p.x / APP_WIDTH, p.y / APP_HEIGHT};
+}
+
+float CircleSource::getFocusRadius() {
+  return static_cast<float>(_radius) / ofMin(APP_WIDTH, APP_HEIGHT);
+}
+
+
+
 
 //
 // video
@@ -157,7 +292,9 @@ Video::~Video() {
 void Video::setup() {
   // _source = CameraSource();
 
-  _source = FileSource();
+  // _source = FileSource();
+
+  _source = CircleSource();
 
   std::visit([&](auto &&s) {
     s.setup();
@@ -178,7 +315,7 @@ void Video::setup() {
   visit([&gray](auto &&s) {
     gray.allocate(s.getWidth(), s.getHeight(), OF_IMAGE_GRAYSCALE);
   }, _source);
-  gray.setColor(ofColor().white);
+  gray.setColor(ofColor().wheat);
 
   _grayBg.setFromPixels(gray);
 }
@@ -391,4 +528,24 @@ void Video::debugContours() {
   }
 
   std::cerr << msg.str();
+}
+
+//
+// get source-depending focus position
+//
+ofPoint Video::getFocus() {
+  return std::visit([](auto &&s){
+    return s.getFocus();
+  },
+    _source);
+}
+
+//
+// get source-depending focus radius
+//
+float Video::getFocusRadius() {
+  return std::visit([](auto &&s){
+    return s.getFocusRadius();
+  },
+    _source);
 }
